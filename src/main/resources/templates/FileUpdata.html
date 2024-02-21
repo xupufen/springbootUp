@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传</title>
+    <style>
+        /* 重置表单样式 */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        input[type="file"] {
+            display: block; /* 将文件输入框转换为块级元素，以便进行居中对齐 */
+            margin: 0 auto; /* 使用自动左右外边距实现水平居中 */
+            padding: 10px; /* 添加内边距以增加空间和美观性 */
+            font-size: 14px; /* 调整字体大小以适配设计 */
+            border: none; /* 去除默认边框 */
+            background-color: #f0f0f0; /* 设置背景颜色 */
+            border-radius: 5px; /* 添加圆角以美化样式 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
+            width: 150px; /* 根据需求设置宽度 */
+            cursor: pointer; /* 更改鼠标悬停时的样式 */
+
+            /* 可选：更改选择文件按钮的文字 */
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            outline: none;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            color: #6c757d;
+        }
+
+        /* 用于自定义“浏览”按钮样式（不一定适用于所有浏览器） */
+        input[type="file"]::-webkit-file-upload-button {
+            cursor: pointer;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* 自定义文件选择按钮 */
+        .custom-file-input {
+            position: relative;
+            width: 100%;
+            height: 48px;
+            background-color: #3f51b5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            outline: none;
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+
+        .custom-file-input:hover {
+            background-color: #5c6bc0;
+        }
+
+        .custom-file-input::before {
+            content: '选择文件';
+            display: inline-block;
+            width: 100%;
+            line-height: 48px;
+            text-align: center;
+        }
+
+        /* 添加用于显示文件名的新样式 */
+        .file-name {
+            display: block;
+            margin: 0 auto;
+            padding: 5px 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            word-wrap: break-word; /* 允许文本换行 */
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: inherit;
+        }
+
+        /* 为父容器添加居中对齐样式 */
+        .custom-file-upload {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 150px;
+            height: 40px; /* 根据需要调整高度 */
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 12px;
+            background-color: #00bcd4;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            transition: width 0.5s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background-color: #e0e0e0;
+            border-radius: 6px;
+            z-index: -1;
+        }
+
+        #status-message {
+            font-size: 14px;
+            color: #3f51b5;
+            margin-top: 10px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            height: 48px;
+            background-color: #3f51b5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            outline: none;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #5c6bc0;
+        }
+    </style>
+</head>
+<body>
+
+<form id="upload-form">
+    <input type="file" id="file-input" accept="*/*" required>
+    <br>
+    <span class="file-name"></span>
+    <br><br>
+    <div id="progress-bar"></div>
+    <br>
+    <span id="status-message"></span>
+    <br><br>
+    <button type="submit">上传文件</button>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const fileInput = document.getElementById('file-input');
+        const progressBar = document.getElementById('progress-bar');
+        const statusMessage = document.getElementById('status-message');
+
+        document.getElementById('upload-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            if (!fileInput.files.length) {
+                statusMessage.textContent = '请选择一个文件';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('multipartFile', fileInput.files[0]);
+
+            try {
+                // 清空之前的状态信息
+                progressBar.style.width = '0%';
+                statusMessage.textContent = '';
+
+                const response = await fetch('/up_data', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                });
+
+                if (!response.ok) { // 如果HTTP状态码不是2xx
+                    throw new Error(`请求失败：${response.status} ${response.statusText}`);
+                }
+
+                // 由于示例中后端返回的是纯文本而非JSON，这里直接读取text内容
+                const data = await response.text();
+
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    progressBar.style.width = '0%';
+                    if (data === '文件上传成功！') {
+                        statusMessage.textContent = '上传成功！';
+                    } else {
+                        statusMessage.textContent = `上传失败：${data}`;
+                    }
+                }, 1000);
+
+            } catch (error) {
+                progressBar.style.width = '0%';
+                statusMessage.textContent = '上传过程中发生错误：' + error.message;
+            }
+        });
+    });
+</script>
+<script>
+    document.getElementById('file-input').addEventListener('change', function () {
+        var fileName = this.files[0].name;
+        document.querySelector('.file-name').textContent = fileName;
+    });
+</script>
+</body>
+</html>

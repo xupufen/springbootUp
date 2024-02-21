@@ -1,0 +1,10 @@
+server:
+  port: 82
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: -1
+      max-request-size: -1
+Updata:
+  url: D:\demo\java\spring_boot\File\src\main\resources\static\Up_data\
